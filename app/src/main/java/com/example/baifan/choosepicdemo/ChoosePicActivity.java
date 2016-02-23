@@ -98,7 +98,14 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
      * 确认按钮
      */
     private Button mbtnOk;
-
+    /**
+     * 是否多选
+     */
+    private boolean isMultiChoose;
+    /**
+     * 设置选择图片的最大数
+     */
+    private int mChooseMaxCount;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -390,6 +397,20 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
      * 获取data从intent
      */
     public void getDataFromIntent(){
+        Intent intent = getIntent();
+        //多选几张
+        mChooseMaxCount = intent.getIntExtra("chooseMaxCount", 0);
 
+        //设置是否多选
+        setSsMultiChoose(mChooseMaxCount);
+    }
+
+    /**
+     * 设置是否多选
+     */
+    private void setSsMultiChoose(int chooseMaxCount){
+        if(chooseMaxCount > 1){
+            isMultiChoose = true;
+        }
     }
 }

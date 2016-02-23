@@ -24,6 +24,10 @@ public class ListImageDirPopupWindow extends PopupWindow implements AdapterView.
     private int mHeight;
     private View mContvertView;
     private ListView mLv;
+    /**
+     * popListview的适配器
+     */
+    private ListDirPopAdapter mAdapter;
 
     private List<FolderDTO> mDatas;
 
@@ -83,7 +87,8 @@ public class ListImageDirPopupWindow extends PopupWindow implements AdapterView.
      */
     private void initViews(Context context) {
         mLv = (ListView) mContvertView.findViewById(R.id.lv_choose_dir);
-        mLv.setAdapter(new ListDirPopAdapter(context, mDatas));
+        mAdapter = new ListDirPopAdapter(context, mDatas);
+        mLv.setAdapter(mAdapter);
     }
 
     /**
@@ -105,6 +110,7 @@ public class ListImageDirPopupWindow extends PopupWindow implements AdapterView.
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         if (mListener != null){
             mListener.onSelected(mDatas.get(position));
+            mAdapter.setSelectionChoose(position);
         }
     }
 }

@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * 选择图片adapter
  * Created by baifan on 16/2/4.
  */
 public class ImageAdapter extends BaseAdapter {
@@ -103,6 +104,7 @@ public class ImageAdapter extends BaseAdapter {
         if(position == 0){
             vh.mImgBtnSelected.setVisibility(View.GONE);
             vh.mImgItem.setImageResource(R.drawable.photoadd);
+//            mImageLoader.displayImage(formatRUrl("(R.drawable.photoadd"), vh.mImgItem);
         }else{
             //重置状态
             vh.mImgBtnSelected.setVisibility(View.VISIBLE);
@@ -160,8 +162,22 @@ public class ImageAdapter extends BaseAdapter {
         ImageButton mImgBtnSelected;
     }
 
+    /**
+     * 格式化本地图片资源
+     * @param picUrl
+     * @return
+     */
     public String formatPicUrl(String picUrl){
         return "file://" + picUrl;
+    }
+
+    /**
+     * 格式化R文件中图片资源
+     * @param resId
+     * @return
+     */
+    public String formatRUrl(String resId){
+        return "drawable://" + resId;
     }
 
     /**
@@ -173,4 +189,6 @@ public class ImageAdapter extends BaseAdapter {
         selectedList.addAll(mSelectedList);
         return selectedList;
     }
+
+
 }

@@ -21,6 +21,10 @@ public class ListDirPopAdapter extends ArrayAdapter<FolderDTO>{
     private LayoutInflater mInflater;
     private List<FolderDTO> mDatas;
     private ImageLoader mImageLoader = ImageLoader.getInstance();
+    /**
+     * 选中文件夹位置
+     */
+    private int mSelectionPosition;
 
     public ListDirPopAdapter(Context context, List<FolderDTO> objects) {
         super(context,0, objects);
@@ -37,7 +41,7 @@ public class ListDirPopAdapter extends ArrayAdapter<FolderDTO>{
             vh.mImg = (ImageView) convertView.findViewById(R.id.img_choose_dir);
             vh.mTvDirCount = (TextView) convertView.findViewById(R.id.tv_dir_num);
             vh.mTvDirName = (TextView) convertView.findViewById(R.id.tv_dir_name);
-
+            vh.mImgChoose = (ImageView) convertView.findViewById(R.id.img_choose);
             convertView.setTag(vh);
         }else {
             vh = (ViewHolder) convertView.getTag();
@@ -51,13 +55,36 @@ public class ListDirPopAdapter extends ArrayAdapter<FolderDTO>{
         vh.mTvDirName.setText(folderDTO.getName());
         vh.mTvDirCount.setText(folderDTO.getCount() + "");
 
+        //初始化选中
+        initSelectionPosition(vh, position);
+
         return convertView;
+    }
+
+    /**
+     * 初始化选中状态
+     */
+    public void initSelectionPosition(ViewHolder vh, int position){
+        if(mSelectionPosition == position){
+            vh.mImgChoose.setVisibility(View.VISIBLE);
+        }else{
+            vh.mImgChoose.setVisibility(View.GONE);
+        }
     }
 
     private class ViewHolder{
         ImageView mImg;
         TextView mTvDirName;
         TextView mTvDirCount;
+        ImageView mImgChoose;
+    }
+
+    /**
+     * 设置选中位置
+     * @param position
+     */
+    public void setSelectionChoose(int position){
+        mSelectionPosition = position;
     }
 
     /**

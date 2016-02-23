@@ -410,7 +410,7 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
      */
     private void setSsMultiChoose(int chooseMaxCount){
         if(chooseMaxCount > 1){
-            isMultiChoose = true;
+            isMultiChoose = true;;
         }
     }
 }

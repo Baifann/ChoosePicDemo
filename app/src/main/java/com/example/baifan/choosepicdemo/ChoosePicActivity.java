@@ -13,6 +13,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,7 +43,7 @@ import java.util.Set;
 /**
  * Created by baifan on 16/2/4.
  */
-public class ChoosePicActivity extends Activity implements ListImageDirPopupWindow.OnDirSelectedListener, ImageAdapter.OnCameraListener{
+public class ChoosePicActivity extends Activity implements ListImageDirPopupWindow.OnDirSelectedListener, ImageAdapter.OnImageAdapterListener{
     /**
      * 显示图片控件
      */
@@ -205,6 +206,42 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
 
     }
 
+    /**
+     * 设置确认按钮
+     */
+    public void setCommitBtnText(){
+        mbtnOk.setEnabled(false);
+        StringBuilder sb = new StringBuilder("确定");
+        if(mImgAdapter == null){
+            mbtnOk.setText(sb.toString());
+            return;
+        }
+        int selectPicCount = mImgAdapter.getSelectCount();
+        Log.i("!!!", "selectPicCount:" + selectPicCount);
+        if(selectPicCount == 0){
+            mbtnOk.setText(sb.toString());
+        }else {
+            mbtnOk.setEnabled(true);
+            sb.append("(").append(selectPicCount).append("/").append(mChooseMaxCount).append(")");
+            mbtnOk.setText(sb);
+        }
+        notifyAdapterIsCanSelect(selectPicCount);
+    }
+
+    /**
+     * 通知adapter是否可以可以点击的状态
+     */
+    public void notifyAdapterIsCanSelect(int imgSelectCount){
+        if(mImgAdapter == null){
+            return;
+        }
+        if(imgSelectCount == mChooseMaxCount){
+            mImgAdapter.setIsCanSelect(false);
+        }else{
+            mImgAdapter.setIsCanSelect(true);
+        }
+    }
+
     private static final int DATA_LOADED = 0x110;
 
     private Handler mHandler = new Handler(){
@@ -322,6 +359,7 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
         mTvDirName.setText(mCurrentDir.getName());
         mTvFileNum.setText(mImgList.size() + "");
         mPopWindow.dismiss();
+
     }
 
     /**
@@ -371,6 +409,11 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
     }
 
     @Override
+    public void onPhotoSelect() {
+        setCommitBtnText();
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode != RESULT_OK) {
             return;
@@ -399,7 +442,7 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
     public void getDataFromIntent(){
         Intent intent = getIntent();
         //多选几张
-        mChooseMaxCount = intent.getIntExtra("chooseMaxCount", 0);
+        mChooseMaxCount = intent.getIntExtra("chooseMaxCount", 1);
 
         //设置是否多选
         setSsMultiChoose(mChooseMaxCount);
@@ -410,7 +453,7 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
      */
     private void setSsMultiChoose(int chooseMaxCount){
         if(chooseMaxCount > 1){
-            isMultiChoose = true;;
+            isMultiChoose = true;
         }
     }
 }

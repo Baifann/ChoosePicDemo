@@ -49,6 +49,7 @@ public class DemoActivity extends Activity implements View.OnClickListener{
     public void onClick(View v) {
         Intent intent = new Intent(DemoActivity.this, ChoosePicActivity.class);
 //        intent.setClassName(DemoActivity.this, "com.example.baifan.choosepicdemo.DemoActivity");
+        intent.putExtra("chooseMaxCount", 9);
         startActivityForResult(intent, REQUEST_CHOOSE_PIC);
     }
 

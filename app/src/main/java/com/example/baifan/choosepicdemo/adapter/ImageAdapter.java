@@ -37,15 +37,21 @@ public class ImageAdapter extends BaseAdapter {
     private LayoutInflater mInflater;
     private ImageLoader mImageLoader;
     private Context mContext;
+    /**
+     * 是否可以选中图片
+     */
+    private boolean isCanSelect = true;
 
 
-    public interface OnCameraListener{
+    public interface OnImageAdapterListener{
         void onCamera();
+        void onPhotoSelect();
     }
 
-    private OnCameraListener mListener;
+    private OnImageAdapterListener mListener;
 
-    public void setOnCameraListener(OnCameraListener listener){
+
+    public void setOnCameraListener(OnImageAdapterListener listener){
         mListener = listener;
     }
 
@@ -62,7 +68,7 @@ public class ImageAdapter extends BaseAdapter {
     /**
      * 选中的图片
      */
-    private static Set<String> mSelectedList = new HashSet<String>();
+    private Set<String> mSelectedList = new HashSet<String>();
 
     public ImageAdapter(Context context, List<String> datas, String dirPath){
         this.mDirPath = dirPath;
@@ -142,10 +148,17 @@ public class ImageAdapter extends BaseAdapter {
                         vh.mImgItem.setColorFilter(null);
                         vh.mImgBtnSelected.setImageResource(R.drawable.picture_unselected);
                     }else{
+                        if(!isCanSelect){
+                            //如果不能选回去
+                            return;
+                        }
                         //未被选择
                         mSelectedList.add(filePath);
                         vh.mImgItem.setColorFilter(Color.parseColor("#77000000"));
                         vh.mImgBtnSelected.setImageResource(R.drawable.pictures_selected);
+                    }
+                    if(mListener != null){
+                        mListener.onPhotoSelect();
                     }
                 }
             }
@@ -155,6 +168,20 @@ public class ImageAdapter extends BaseAdapter {
             vh.mImgItem.setColorFilter(Color.parseColor("#77000000"));
             vh.mImgBtnSelected.setImageResource(R.drawable.pictures_selected);
         }
+    }
+
+    /**
+     * 设置是否可以选中图片
+     */
+    public void setIsCanSelect(boolean isCanSelect){
+        this.isCanSelect = isCanSelect;
+    }
+
+    /**
+     * 获取选中数量
+     */
+    public int getSelectCount(){
+        return mSelectedList.size();
     }
 
     class ViewHolder{

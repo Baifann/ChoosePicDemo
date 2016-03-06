@@ -3,4 +3,7 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+    <color name="green">#3BB032</color>
+    <!--50%透明度的绿色-->
+    <color name="tra50_green">#803BB032</color>
 </resources>

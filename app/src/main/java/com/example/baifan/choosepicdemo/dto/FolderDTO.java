@@ -54,4 +54,20 @@ public class FolderDTO {
     public void setCount(int count) {
         this.count = count;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        FolderDTO folderDTO = (FolderDTO) o;
+
+        return dir != null ? dir.equals(folderDTO.dir) : folderDTO.dir == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        return dir != null ? dir.hashCode() : 0;
+    }
 }

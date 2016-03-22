@@ -12,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.GridView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -32,6 +33,8 @@ import java.util.Set;
  * Created by baifan on 16/2/4.
  */
 public class ImageAdapter extends BaseAdapter {
+    private final static int TYPE_CAMERA = 0;
+    private final static int TYPE_PHOTO = 1;
     private String mDirPath;
     private List<String> mImgPaths;
     private LayoutInflater mInflater;
@@ -41,25 +44,28 @@ public class ImageAdapter extends BaseAdapter {
      * 是否可以选中图片
      */
     private boolean isCanSelect = true;
+    private int mItemSize;
 
-
-    public interface OnImageAdapterListener{
+    public interface OnImageAdapterListener {
         void onCamera();
+
         void onPhotoSelect();
     }
 
     private OnImageAdapterListener mListener;
 
+    private GridView.LayoutParams mItemLayoutParams;
 
-    public void setOnCameraListener(OnImageAdapterListener listener){
+    public void setOnCameraListener(OnImageAdapterListener listener) {
         mListener = listener;
     }
 
     /**
      * 改变集合
+     *
      * @param imgPaths
      */
-    public void setListAndDir(List<String> imgPaths, String dirPath){
+    public void setListAndDir(List<String> imgPaths, String dirPath) {
         mImgPaths = imgPaths;
         mDirPath = dirPath;
         this.notifyDataSetChanged();
@@ -70,22 +76,26 @@ public class ImageAdapter extends BaseAdapter {
      */
     private Set<String> mSelectedList = new HashSet<String>();
 
-    public ImageAdapter(Context context, List<String> datas, String dirPath){
+    public ImageAdapter(Context context, List<String> datas, String dirPath) {
         this.mDirPath = dirPath;
         this.mImgPaths = datas;
         mContext = context;
         mInflater = LayoutInflater.from(context);
         mImageLoader = ImageLoader.getInstance();
+        mItemLayoutParams = new GridView.LayoutParams(GridView.LayoutParams.MATCH_PARENT, GridView.LayoutParams.MATCH_PARENT);
     }
 
     @Override
     public int getCount() {
-        return mImgPaths.size();
+        return mImgPaths.size() + 1;
     }
 
     @Override
     public Object getItem(int position) {
-        return mImgPaths.get(position);
+        if (position == 0) {
+            return null;
+        }
+        return mImgPaths.get(position - 1);
     }
 
     @Override
@@ -93,78 +103,95 @@ public class ImageAdapter extends BaseAdapter {
         return position;
     }
 
+    public void setItemSize(int columnWidth) {
+        if (mItemSize == columnWidth) {
+            return;
+        }
+        mItemSize = columnWidth;
+        mItemLayoutParams = new GridView.LayoutParams(mItemSize, mItemSize);
+        notifyDataSetChanged();
+    }
+
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        ViewHolder vh = null;
-        if(convertView == null){
-            convertView = mInflater.inflate(R.layout.item_gri_pic, null);
-            vh = new ViewHolder();
-            vh.mImgItem = (ImageView) convertView.findViewById(R.id.img_item_img);
-            vh.mImgBtnSelected = (ImageButton) convertView.findViewById(R.id.imgBtn_item_select);
+        ViewHolder vh;
+        int type = getItemViewType(position);
+        if (type == TYPE_CAMERA) {
+            convertView = mInflater.inflate(R.layout.item_photo, null);
+            convertView.setTag(null);
+        } else if (type == TYPE_PHOTO) {
+            if (convertView == null) {
+                //根据position 选择不同的view
 
-            convertView.setTag(vh);
-        }else{
-            vh = (ViewHolder) convertView.getTag();
-        }
+                convertView = mInflater.inflate(R.layout.item_gri_pic, parent, false);
+                vh = new ViewHolder();
+                vh.mImgItem = (ImageView) convertView.findViewById(R.id.img_item_img);
+                vh.mImgBtnSelected = (ImageButton) convertView.findViewById(R.id.imgBtn_item_select);
 
-        if(position == 0){
-            vh.mImgBtnSelected.setVisibility(View.GONE);
-            vh.mImgItem.setImageResource(R.drawable.photoadd);
-//            mImageLoader.displayImage(formatRUrl("(R.drawable.photoadd"), vh.mImgItem);
-        }else{
+                convertView.setTag(vh);
+            } else {
+                vh = (ViewHolder) convertView.getTag();
+                if(vh == null){
+                    convertView = mInflater.inflate(R.layout.item_gri_pic, parent, false);
+                    vh = new ViewHolder();
+                    vh.mImgItem = (ImageView) convertView.findViewById(R.id.img_item_img);
+                    vh.mImgBtnSelected = (ImageButton) convertView.findViewById(R.id.imgBtn_item_select);
+                }
+            }
+
             //重置状态
             vh.mImgBtnSelected.setVisibility(View.VISIBLE);
             vh.mImgItem.setImageResource(R.drawable.pictures_no);
             vh.mImgBtnSelected.setImageResource(R.drawable.picture_unselected);
             vh.mImgItem.setColorFilter(null);
             //加载图片
-            mImageLoader.displayImage(formatPicUrl(mDirPath + "/" + mImgPaths.get(position)), vh.mImgItem);
-
-
+            mImageLoader.displayImage(formatPicUrl(mDirPath + "/" + getItem(position)), vh.mImgItem);
+            fillClickEvent(vh, position);
         }
-        fillClickEvent(vh, position);
+
+        convertView.setLayoutParams(mItemLayoutParams);
+
         return convertView;
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return position == 0 ? TYPE_CAMERA : TYPE_PHOTO;
     }
 
     /**
      * 添加点击事件
+     *
      * @param vh
      */
-    public void fillClickEvent(final ViewHolder vh, final int position){
-        final String filePath = mDirPath + "/" + mImgPaths.get(position);
+    public void fillClickEvent(final ViewHolder vh, final int position) {
+        final String filePath = mDirPath + "/" + getItem(position);
         vh.mImgItem.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(position == 0){
-                    //第一个点击进入拍摄
-                    if(mListener != null){
-                        mListener.onCamera();
+                //进行其他操作
+                if (mSelectedList.contains(filePath)) {
+                    //已经选择
+                    mSelectedList.remove(filePath);
+                    vh.mImgItem.setColorFilter(null);
+                    vh.mImgBtnSelected.setImageResource(R.drawable.picture_unselected);
+                } else {
+                    if (!isCanSelect) {
+                        //如果不能选回去
+                        return;
                     }
-                }else{
-                    //进行其他操作
-                    if(mSelectedList.contains(filePath)){
-                        //已经选择
-                        mSelectedList.remove(filePath);
-                        vh.mImgItem.setColorFilter(null);
-                        vh.mImgBtnSelected.setImageResource(R.drawable.picture_unselected);
-                    }else{
-                        if(!isCanSelect){
-                            //如果不能选回去
-                            return;
-                        }
-                        //未被选择
-                        mSelectedList.add(filePath);
-                        vh.mImgItem.setColorFilter(Color.parseColor("#77000000"));
-                        vh.mImgBtnSelected.setImageResource(R.drawable.pictures_selected);
-                    }
-                    if(mListener != null){
-                        mListener.onPhotoSelect();
-                    }
+                    //未被选择
+                    mSelectedList.add(filePath);
+                    vh.mImgItem.setColorFilter(Color.parseColor("#77000000"));
+                    vh.mImgBtnSelected.setImageResource(R.drawable.pictures_selected);
+                }
+                if (mListener != null) {
+                    mListener.onPhotoSelect();
                 }
             }
         });
 
-        if(mSelectedList.contains(filePath)){
+        if (mSelectedList.contains(filePath)) {
             vh.mImgItem.setColorFilter(Color.parseColor("#77000000"));
             vh.mImgBtnSelected.setImageResource(R.drawable.pictures_selected);
         }
@@ -173,49 +200,51 @@ public class ImageAdapter extends BaseAdapter {
     /**
      * 设置是否可以选中图片
      */
-    public void setIsCanSelect(boolean isCanSelect){
+    public void setIsCanSelect(boolean isCanSelect) {
         this.isCanSelect = isCanSelect;
     }
 
     /**
      * 获取选中数量
      */
-    public int getSelectCount(){
+    public int getSelectCount() {
         return mSelectedList.size();
     }
 
-    class ViewHolder{
+    class ViewHolder {
         ImageView mImgItem;
         ImageButton mImgBtnSelected;
     }
 
     /**
      * 格式化本地图片资源
+     *
      * @param picUrl
      * @return
      */
-    public String formatPicUrl(String picUrl){
+    public String formatPicUrl(String picUrl) {
         return "file://" + picUrl;
     }
 
     /**
      * 格式化R文件中图片资源
+     *
      * @param resId
      * @return
      */
-    public String formatRUrl(String resId){
+    public String formatRUrl(String resId) {
         return "drawable://" + resId;
     }
 
     /**
      * 返回选中的list
+     *
      * @return
      */
-    public ArrayList<String> getSelectedPic(){
+    public ArrayList<String> getSelectedPic() {
         ArrayList<String> selectedList = new ArrayList<String>();
         selectedList.addAll(mSelectedList);
         return selectedList;
     }
-
 
 }

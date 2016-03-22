@@ -18,6 +18,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.GridView;
@@ -43,7 +44,9 @@ import java.util.Set;
 /**
  * Created by baifan on 16/2/4.
  */
-public class ChoosePicActivity extends Activity implements ListImageDirPopupWindow.OnDirSelectedListener, ImageAdapter.OnImageAdapterListener{
+public class ChoosePicActivity extends Activity implements ListImageDirPopupWindow.OnDirSelectedListener,
+        ImageAdapter.OnImageAdapterListener,
+        AdapterView.OnItemClickListener {
     /**
      * 显示图片控件
      */
@@ -107,6 +110,15 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
      * 设置选择图片的最大数
      */
     private int mChooseMaxCount;
+    /**
+     * 已选中的图片数量
+     */
+    private int mSelectPicCount;
+
+    String[] projection = new String[]{
+            MediaStore.Images.Media.DATA
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -115,7 +127,6 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
         getDataFromIntent();
 
         initViews();
-        //手机图片
         initDatas();
         initEvents();
     }
@@ -148,23 +159,35 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
                 Uri mImgUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
 
                 ContentResolver cr = ChoosePicActivity.this.getContentResolver();
-                Cursor cursor = cr.query(mImgUri, null, MediaStore.Images.Media.MIME_TYPE + "= ? or " + MediaStore.Images.Media.MIME_TYPE + "= ? ", new String[]{"image/jpeg", "image/png"}, MediaStore.Images.Media.DATE_MODIFIED);
+
+//                Cursor cursor = cr.query(mImgUri,
+//                        null,
+//                        MediaStore.Images.Media.MIME_TYPE + "= ? or " + MediaStore.Images.Media.MIME_TYPE + "= ? ",
+//                        new String[]{"image/jpg", "image/png"},
+//                        MediaStore.Images.Media.DATE_MODIFIED);
+
+                Cursor cursor = cr.query(mImgUri,
+                        projection,
+                        null,
+                        null,
+                        null);
 
                 Set<String> mDirPaths = new HashSet<String>();
-                while (cursor.moveToNext()){
-                    String path = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
+                while (cursor.moveToNext()) {
+                    String path = cursor.getString(cursor.getColumnIndexOrThrow(projection[0]));
+//                    String path = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
 
                     File parentFile = new File(path).getParentFile();
-                    if(parentFile == null){
+                    if (parentFile == null) {
                         continue;
                     }
 
                     String dirPath = parentFile.getAbsolutePath();
 
                     FolderDTO folder = null;
-                    if(mDirPaths.contains(dirPath)){
+                    if (mDirPaths.contains(dirPath)) {
                         continue;
-                    }else{
+                    } else {
                         mDirPaths.add(dirPath);
 
                         folder = new FolderDTO();
@@ -172,14 +195,15 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
                         folder.setFirstImgPath(path);
                     }
 
-                    if(parentFile.list() == null){
+                    if (parentFile.list() == null) {
                         continue;
                     }
 
                     int picSize = parentFile.list(new FilenameFilter() {
                         @Override
                         public boolean accept(File dir, String filename) {
-                            if(filename.endsWith("jpg") || filename.endsWith(".jpeg") || filename.endsWith(".png")){
+                            if (filename.endsWith(".jpg") || filename.endsWith(".jpeg") || filename.endsWith(".png") ||
+                                    filename.endsWith(".JPG") || filename.endsWith(".JPEG") || filename.endsWith(".PNG")) {
                                 return true;
                             }
 
@@ -191,7 +215,7 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
                     //将图片文件夹存放进集合中
                     mFolderList.add(folder);
 
-                    if(picSize > mMaxCount){
+                    if (picSize > mMaxCount) {
                         mMaxCount = picSize;
                         mCurrentDir = parentFile;
                     }
@@ -209,18 +233,18 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
     /**
      * 设置确认按钮
      */
-    public void setCommitBtnText(){
+    public void setCommitBtnText() {
         mbtnOk.setEnabled(false);
         StringBuilder sb = new StringBuilder("确定");
-        if(mImgAdapter == null){
+        if (mImgAdapter == null) {
             mbtnOk.setText(sb.toString());
             return;
         }
-        int selectPicCount = mImgAdapter.getSelectCount();
-        Log.i("!!!", "selectPicCount:" + selectPicCount);
-        if(selectPicCount == 0){
+
+        int selectPicCount = mSelectPicCount + mImgAdapter.getSelectCount();
+        if (selectPicCount == 0) {
             mbtnOk.setText(sb.toString());
-        }else {
+        } else {
             mbtnOk.setEnabled(true);
             sb.append("(").append(selectPicCount).append("/").append(mChooseMaxCount).append(")");
             mbtnOk.setText(sb);
@@ -231,23 +255,23 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
     /**
      * 通知adapter是否可以可以点击的状态
      */
-    public void notifyAdapterIsCanSelect(int imgSelectCount){
-        if(mImgAdapter == null){
+    public void notifyAdapterIsCanSelect(int imgSelectCount) {
+        if (mImgAdapter == null) {
             return;
         }
-        if(imgSelectCount == mChooseMaxCount){
+        if (imgSelectCount == mChooseMaxCount) {
             mImgAdapter.setIsCanSelect(false);
-        }else{
+        } else {
             mImgAdapter.setIsCanSelect(true);
         }
     }
 
     private static final int DATA_LOADED = 0x110;
 
-    private Handler mHandler = new Handler(){
+    private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
-            if(msg.what == DATA_LOADED){
+            if (msg.what == DATA_LOADED) {
                 mProgress.dismiss();
                 //绑定数据到view中
                 data2View();
@@ -270,6 +294,10 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
         });
 
         mPopWindow.setOnDirSelectedListener(this);
+        FolderDTO folder = new FolderDTO();
+        folder.setDir(mCurrentDir.getAbsolutePath());
+        int dirPosition = mFolderList.indexOf(folder);
+        mPopWindow.setSelectPosition(dirPosition);
     }
 
     /**
@@ -283,7 +311,7 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
 
 
     private void data2View() {
-        if(mCurrentDir == null){
+        if (mCurrentDir == null) {
             Toast.makeText(this, "未扫描到任何图片", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -294,6 +322,7 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
 
         mImgAdapter = new ImageAdapter(this, mImgList, mCurrentDir.getAbsolutePath());
         mGridView.setAdapter(mImgAdapter);
+        setGriHeightAndWidth();
         mImgAdapter.setOnCameraListener(this);
         mTvFileNum.setText(mMaxCount + "");
         mTvDirName.setText(mCurrentDir.getName());
@@ -306,9 +335,10 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
         mLyBottom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mPopWindow.setAnimationStyle(R.style.dir_pupupwindow_anim);
+                //设置动画
+//                mPopWindow.setAnimationStyle(R.style.dir_pupupwindow_anim);
                 //设置显示位置
-                mPopWindow.showAsDropDown(mLyBottom, 0 ,0);
+                mPopWindow.showAsDropDown(mLyBottom, 0, 0);
                 lightOff();
             }
         });
@@ -323,6 +353,7 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
                 finish();
             }
         });
+        mGridView.setOnItemClickListener(this);
     }
 
     /**
@@ -343,10 +374,10 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
         List<String> addList = Arrays.asList(mCurrentDir.list(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String filename) {
-                if(filename.endsWith("jpg") || filename.endsWith(".jpeg") || filename.endsWith(".png")){
+                if (filename.endsWith(".jpg") || filename.endsWith(".jpeg") || filename.endsWith(".png") ||
+                        filename.endsWith(".JPG") || filename.endsWith(".JPEG") || filename.endsWith(".PNG")) {
                     return true;
                 }
-
                 return false;
             }
         }));
@@ -357,18 +388,17 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
         mImgAdapter.setListAndDir(mImgList, mCurrentDir.getAbsolutePath());
 
         mTvDirName.setText(mCurrentDir.getName());
-        mTvFileNum.setText(mImgList.size() + "");
+        mTvFileNum.setText(String.valueOf(mImgList.size()));
         mPopWindow.dismiss();
-
     }
 
     /**
      * 填充第一个item
      */
-    public void fillFirstItemList(){
-        if(mImgList != null){
+    public void fillFirstItemList() {
+        if (mImgList != null) {
             mImgList.clear();
-            mImgList.add("");
+//            mImgList.add("");
         }
     }
 
@@ -427,9 +457,10 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
 
     /**
      * 结束当前页面
+     *
      * @param fileList
      */
-    public void finishCurrentActivity(ArrayList<String> fileList){
+    public void finishCurrentActivity(ArrayList<String> fileList) {
         Intent intent = new Intent();
         intent.putStringArrayListExtra("fileList", fileList);
         setResult(RESULT_OK, intent);
@@ -439,11 +470,12 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
     /**
      * 获取data从intent
      */
-    public void getDataFromIntent(){
+    public void getDataFromIntent() {
         Intent intent = getIntent();
         //多选几张
         mChooseMaxCount = intent.getIntExtra("chooseMaxCount", 1);
-
+        //获取已经选中的图片数目
+        mSelectPicCount = intent.getIntExtra("selectPicCount", 0);
         //设置是否多选
         setSsMultiChoose(mChooseMaxCount);
     }
@@ -451,9 +483,31 @@ public class ChoosePicActivity extends Activity implements ListImageDirPopupWind
     /**
      * 设置是否多选
      */
-    private void setSsMultiChoose(int chooseMaxCount){
-        if(chooseMaxCount > 1){
+    private void setSsMultiChoose(int chooseMaxCount) {
+        if (chooseMaxCount > 1) {
             isMultiChoose = true;
+        }
+    }
+
+    /**
+     * 设置gridview的item的宽和高
+     */
+    private void setGriHeightAndWidth() {
+        final int width = mGridView.getWidth();
+        final int height = mGridView.getHeight();
+
+        final int desireSize = getResources().getDimensionPixelOffset(R.dimen.image_size);
+        final int numCount = width / desireSize;
+        final int columnSpace = getResources().getDimensionPixelOffset(R.dimen.space_size);
+        int columnWidth = (width - columnSpace * (numCount - 1)) / numCount;
+        mImgAdapter.setItemSize(columnWidth);
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        if (position == 0) {
+            //进行拍照
+            openCamera();
         }
     }
 }

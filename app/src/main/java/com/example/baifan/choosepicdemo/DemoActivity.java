@@ -2,6 +2,7 @@ package com.example.baifan.choosepicdemo;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -9,8 +10,10 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.example.baifan.choosepicdemo.util.BitmapUtil;
 import com.nostra13.universalimageloader.core.ImageLoader;
 
+import java.io.File;
 import java.util.List;
 
 /**
@@ -49,7 +52,10 @@ public class DemoActivity extends Activity implements View.OnClickListener{
     public void onClick(View v) {
         Intent intent = new Intent(DemoActivity.this, ChoosePicActivity.class);
 //        intent.setClassName(DemoActivity.this, "com.example.baifan.choosepicdemo.DemoActivity");
+        //传入图片最大的选择数
         intent.putExtra("chooseMaxCount", 9);
+        //传递已经选择照片的数目
+        intent.putExtra("selectPicCount", 2);
         startActivityForResult(intent, REQUEST_CHOOSE_PIC);
     }
 
@@ -72,7 +78,12 @@ public class DemoActivity extends Activity implements View.OnClickListener{
     private void fillPic(List<String> fileList) {
         if(fileList != null && fileList.size() > 0){
             Toast.makeText(this, fileList.get(0), Toast.LENGTH_SHORT).show();
+            File file = new File(fileList.get(0));
+            Log.i("hehe", "文件大小:" + file.length());
+            //800*800差不多够了
+            BitmapUtil.handleBitmap(fileList.get(0), fileList.get(0), 800, 800);
             mImageLoader.displayImage(formatPicUrl(fileList.get(0)), mImgDemo);
+            Log.i("hehe", "文件大小:" + file.length());
         }
     }
 

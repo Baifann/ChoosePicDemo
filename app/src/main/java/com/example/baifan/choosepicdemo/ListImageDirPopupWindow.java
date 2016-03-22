@@ -113,4 +113,14 @@ public class ListImageDirPopupWindow extends PopupWindow implements AdapterView.
             mAdapter.setSelectionChoose(position);
         }
     }
+
+    /**
+     * 设置
+     * @param position
+     */
+    public void setSelectPosition(int position){
+        if(mAdapter != null){
+            mAdapter.setSelectionChoose(position);
+        }
+    }
 }
